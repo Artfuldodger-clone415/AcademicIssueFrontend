@@ -1,71 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+"use client"
+
+import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { getColleges } from "./api" // Import from your api.js
+import axios from "axios"
 
 const StudentRegistration = () => {
-  const navigate = useNavigate();
-  const [colleges, setColleges] = useState([]);
+  const navigate = useNavigate()
+  const [colleges, setColleges] = useState([])
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    student_number: '',
-    college: '',
-    password: '',
-    password2: '',
-    role: 'student'
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    student_number: "",
+    college: "",
+    password: "",
+    password2: "",
+    role: "student",
+  })
+  const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    axios.get('/api/colleges/')
-      .then(response => {
-        setColleges(response.data);
+    // ✅ Use the configured API function instead of direct axios call
+    getColleges()
+      .then((data) => {
+        setColleges(data)
       })
-      .catch(error => {
-        console.error('Error fetching colleges:', error);
-      });
-  }, []);
+      .catch((error) => {
+        console.error("Error fetching colleges:", error)
+      })
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+      [e.target.name]: e.target.value,
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
+    e.preventDefault()
+    setIsLoading(true)
+    setErrors({})
 
     try {
-      await axios.post('/api/register/', formData);
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      // ✅ Use the configured API base URL
+      const API_BASE_URL = process.env.REACT_APP_API_URL
+      await axios.post(`${API_BASE_URL}/register/`, formData)
+      navigate("/login", { state: { message: "Registration successful! Please login." } })
     } catch (error) {
       if (error.response && error.response.data) {
-        setErrors(error.response.data);
+        setErrors(error.response.data)
       } else {
-        setErrors({ general: 'An error occurred during registration.' });
+        setErrors({ general: "An error occurred during registration." })
       }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="container">
-      <div className="card mt-8 mx-auto" style={{ maxWidth: '600px' }}>
+      <div className="card mt-8 mx-auto" style={{ maxWidth: "600px" }}>
         <div className="card-header">
           <h2 className="text-center">Student Registration</h2>
         </div>
         <div className="card-body">
-          {errors.general && (
-            <div className="alert alert-error">{errors.general}</div>
-          )}
+          {errors.general && <div className="alert alert-error">{errors.general}</div>}
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -109,14 +113,7 @@ const StudentRegistration = () => {
 
             <div className="mt-4">
               <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
 
@@ -148,16 +145,12 @@ const StudentRegistration = () => {
 
             <div className="mt-4">
               <label htmlFor="college">College</label>
-              <select
-                id="college"
-                name="college"
-                value={formData.college}
-                onChange={handleChange}
-                required
-              >
+              <select id="college" name="college" value={formData.college} onChange={handleChange} required>
                 <option value="">Select College</option>
                 {colleges.map((college, index) => (
-                  <option key={index} value={college}>{college}</option>
+                  <option key={index} value={college}>
+                    {college}
+                  </option>
                 ))}
               </select>
               {errors.college && <p className="text-red-600 text-sm">{errors.college}</p>}
@@ -193,7 +186,7 @@ const StudentRegistration = () => {
 
             <div className="mt-6">
               <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
-                {isLoading ? 'Registering...' : 'Register'}
+                {isLoading ? "Registering..." : "Register"}
               </button>
             </div>
           </form>
@@ -203,7 +196,7 @@ const StudentRegistration = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StudentRegistration;
+export default StudentRegistration
