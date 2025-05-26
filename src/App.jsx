@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import axios from "axios"
 
 // Components
 import Login from "./components/auth/Login"
@@ -24,8 +22,8 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext"
 // Styles
 import "./styles/global.css"
 
-// Set up axios defaults
-axios.defaults.baseURL = "http://localhost:8000"
+// ✅ REMOVED: axios.defaults.baseURL = "http://localhost:8000"
+// This was overriding the environment variable and causing 404s in production
 
 function App() {
   return (
@@ -49,15 +47,21 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
       <Route path="/register" element={!isAuthenticated ? <RoleSelection /> : <Navigate to="/dashboard" />} />
-      <Route path="/register/student" element={!isAuthenticated ? <StudentRegistration /> : <Navigate to="/dashboard" />} />
-      <Route path="/register/lecturer" element={!isAuthenticated ? <LecturerRegistration /> : <Navigate to="/dashboard" />} />
-      <Route path="/register/registrar" element={!isAuthenticated ? <RegistrarRegistration /> : <Navigate to="/dashboard" />} />
+      <Route
+        path="/register/student"
+        element={!isAuthenticated ? <StudentRegistration /> : <Navigate to="/dashboard" />}
+      />
+      <Route
+        path="/register/lecturer"
+        element={!isAuthenticated ? <LecturerRegistration /> : <Navigate to="/dashboard" />}
+      />
+      <Route
+        path="/register/registrar"
+        element={!isAuthenticated ? <RegistrarRegistration /> : <Navigate to="/dashboard" />}
+      />
 
       {/* Protected routes with Layout */}
-      <Route
-        path="/"
-        element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}
-      >
+      <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="issues" element={<IssueList />} />
