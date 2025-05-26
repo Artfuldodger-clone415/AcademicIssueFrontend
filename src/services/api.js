@@ -1,9 +1,8 @@
 import axios from "axios"
 
-// Add better error logging
+// Add better error logging and debugging
 console.log("API URL:", process.env.REACT_APP_API_URL)
 
-// Validate environment variable
 if (!process.env.REACT_APP_API_URL) {
   console.error("REACT_APP_API_URL environment variable is not set!")
 }
@@ -13,24 +12,47 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 second timeout for slow Render cold starts
 })
 
-// Add a request interceptor
+// Add request interceptor
 api.interceptors.request.use(
   (config) => {
+    console.log("Making API request:", {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      fullURL: `${config.baseURL}${config.url}`,
+    })
+
     const token = localStorage.getItem("access_token")
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    console.error("Request error:", error)
+    return Promise.reject(error)
+  },
 )
 
-// Add a response interceptor
+// Add response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("API response success:", {
+      status: response.status,
+      url: response.config.url,
+    })
+    return response
+  },
   async (error) => {
+    console.error("API response error:", {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message,
+    })
+
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -46,8 +68,7 @@ api.interceptors.response.use(
           return Promise.reject(error)
         }
 
-        const API_BASE_URL = process.env.REACT_APP_API_URL
-        const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
+        const response = await api.post("/token/refresh/", {
           refresh: refreshToken,
         })
 
@@ -59,6 +80,7 @@ api.interceptors.response.use(
 
         return api(originalRequest)
       } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError)
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
         window.location.href = "/login"
@@ -70,13 +92,60 @@ api.interceptors.response.use(
   },
 )
 
-// ✅ Add a register function to your API
+// ✅ Registration function matching your Django endpoint
 export const register = async (userData) => {
-  const response = await api.post("/register/", userData)
-  return response.data
+  try {
+    console.log("Registering user with data:", { ...userData, password: "[HIDDEN]", password2: "[HIDDEN]" })
+    const response = await api.post("/register/", userData)
+    console.log("Registration successful")
+    return response.data
+  } catch (error) {
+    console.error("Registration failed:", error.response?.data || error.message)
+    throw error
+  }
 }
 
-// Issues API
+// ✅ Login function matching your Django endpoint
+export const login = async (credentials) => {
+  try {
+    console.log("Attempting login for user:", credentials.username)
+    const response = await api.post("/token/", credentials)
+    const { access, refresh } = response.data
+
+    localStorage.setItem("access_token", access)
+    localStorage.setItem("refresh_token", refresh)
+
+    console.log("Login successful")
+    return response.data
+  } catch (error) {
+    console.error("Login failed:", error.response?.data || error.message)
+    throw error
+  }
+}
+
+// ✅ Colleges function matching your Django endpoint
+export const getColleges = async () => {
+  try {
+    const response = await api.get("/colleges/")
+    return response.data
+  } catch (error) {
+    console.error("Failed to fetch colleges:", error.response?.data || error.message)
+    throw error
+  }
+}
+
+// ✅ Course units function matching your Django endpoint
+export const getCourseUnits = async () => {
+  try {
+    const response = await api.get("/course-units/")
+    return response.data
+  } catch (error) {
+    console.error("Failed to fetch course units:", error.response?.data || error.message)
+    throw error
+  }
+}
+
+// ✅ Issues API matching your Django endpoints
 export const getIssues = async (filters = {}) => {
   const response = await api.get("/issues/", { params: filters })
   return response.data
@@ -107,7 +176,7 @@ export const assignIssue = async (id, userId) => {
   return response.data
 }
 
-// Comments API
+// ✅ Comments API matching your nested router
 export const getComments = async (issueId) => {
   const response = await api.get(`/issues/${issueId}/comments/`)
   return response.data
@@ -121,7 +190,7 @@ export const addComment = async (issueId, content) => {
   return response.data
 }
 
-// Notifications API
+// ✅ Notifications API matching your Django endpoints
 export const getNotifications = async () => {
   const response = await api.get("/notifications/")
   return response.data
@@ -137,35 +206,69 @@ export const markAllNotificationsAsRead = async () => {
   return response.data
 }
 
-// Users API
-export const getLecturers = async () => {
-  const response = await api.get("/users/?role=lecturer")
+export const getUnreadNotificationCount = async () => {
+  const response = await api.get("/notifications/unread-count/")
   return response.data
 }
 
+// ✅ Users API matching your Django endpoints
 export const getUsers = async () => {
   const response = await api.get("/users/")
   return response.data
 }
 
-// Added functions for the missing endpoints
-export const getIssueStats = async () => {
-  const response = await api.get("/issues/stats/")
-  return response.data
-}
-
-export const getCourseUnits = async () => {
-  const response = await api.get("/course-units/")
-  return response.data
-}
-
-export const getColleges = async () => {
-  const response = await api.get("/colleges/")
+export const getLecturers = async () => {
+  const response = await api.get("/lecturers/")
   return response.data
 }
 
 export const getStudents = async () => {
-  const response = await api.get("/users/?role=student")
+  const response = await api.get("/students/")
+  return response.data
+}
+
+export const getRegistrars = async () => {
+  const response = await api.get("/registrars/")
+  return response.data
+}
+
+// ✅ Dashboard API matching your Django endpoint
+export const getDashboardData = async () => {
+  const response = await api.get("/dashboard/")
+  return response.data
+}
+
+// ✅ Profile API matching your Django endpoint
+export const getCurrentUser = async () => {
+  const response = await api.get("/profile/")
+  return response.data
+}
+
+export const updateProfile = async (userData) => {
+  const response = await api.patch("/profile/", userData)
+  return response.data
+}
+
+// ✅ Reports API matching your Django endpoint
+export const getIssueReport = async (params = {}) => {
+  const response = await api.get("/issues/report/", { params })
+  return response.data
+}
+
+export const getUnassignedIssues = async () => {
+  const response = await api.get("/issues/unassigned/")
+  return response.data
+}
+
+// ✅ Role fields API matching your Django endpoint
+export const getRoleFields = async () => {
+  const response = await api.get("/role-fields/")
+  return response.data
+}
+
+// Additional utility functions
+export const getIssueStats = async () => {
+  const response = await api.get("/issues/stats/")
   return response.data
 }
 
@@ -179,29 +282,7 @@ export const generateReport = async (reportType, period, college) => {
     params.college = college
   }
 
-  const response = await api.get("/reports/generate/", { params })
-  return response.data
-}
-
-// Profile API
-export const getCurrentUser = async () => {
-  const response = await api.get("/users/me/")
-  return response.data
-}
-
-export const updateProfile = async (userData) => {
-  const response = await api.patch("/users/me/", userData)
-  return response.data
-}
-
-// Authentication
-export const login = async (credentials) => {
-  const response = await api.post("/token/", credentials)
-  const { access, refresh } = response.data
-
-  localStorage.setItem("access_token", access)
-  localStorage.setItem("refresh_token", refresh)
-
+  const response = await api.get("/issues/report/", { params })
   return response.data
 }
 
