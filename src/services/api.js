@@ -1,14 +1,12 @@
 import axios from "axios"
 
-// Add better error logging and debugging
-console.log("API URL:", process.env.REACT_APP_API_URL)
+// ✅ Use environment variable or fallback to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api"
 
-if (!process.env.REACT_APP_API_URL) {
-  console.error("REACT_APP_API_URL environment variable is not set!")
-}
+console.log("API Base URL:", API_BASE_URL)
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -75,9 +73,7 @@ api.interceptors.response.use(
         const { access } = response.data
         localStorage.setItem("access_token", access)
 
-        // Update the failed request with new token
         originalRequest.headers.Authorization = `Bearer ${access}`
-
         return api(originalRequest)
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError)
@@ -92,7 +88,7 @@ api.interceptors.response.use(
   },
 )
 
-// ✅ Registration function matching your Django endpoint
+// ✅ Registration function
 export const register = async (userData) => {
   try {
     console.log("Registering user with data:", { ...userData, password: "[HIDDEN]", password2: "[HIDDEN]" })
@@ -105,7 +101,7 @@ export const register = async (userData) => {
   }
 }
 
-// ✅ Login function matching your Django endpoint
+// ✅ Login function
 export const login = async (credentials) => {
   try {
     console.log("Attempting login for user:", credentials.username)
@@ -134,7 +130,7 @@ export const getCurrentUser = async () => {
   }
 }
 
-// ✅ Colleges function matching your Django endpoint
+// ✅ Colleges function
 export const getColleges = async () => {
   try {
     const response = await api.get("/colleges/")
@@ -145,7 +141,7 @@ export const getColleges = async () => {
   }
 }
 
-// ✅ Course units function matching your Django endpoint
+// ✅ Course units function
 export const getCourseUnits = async () => {
   try {
     const response = await api.get("/course-units/")
@@ -167,7 +163,7 @@ export const updateProfile = async (userData) => {
   }
 }
 
-// ✅ Issues API matching your Django endpoints
+// ✅ Issues API
 export const getIssues = async (filters = {}) => {
   const response = await api.get("/issues/", { params: filters })
   return response.data
@@ -198,7 +194,7 @@ export const assignIssue = async (id, userId) => {
   return response.data
 }
 
-// ✅ Comments API matching your nested router
+// ✅ Comments API
 export const getComments = async (issueId) => {
   const response = await api.get(`/issues/${issueId}/comments/`)
   return response.data
@@ -212,7 +208,7 @@ export const addComment = async (issueId, content) => {
   return response.data
 }
 
-// ✅ Notifications API matching your Django endpoints
+// ✅ Notifications API
 export const getNotifications = async () => {
   const response = await api.get("/notifications/")
   return response.data
@@ -233,7 +229,7 @@ export const getUnreadNotificationCount = async () => {
   return response.data
 }
 
-// ✅ Users API matching your Django endpoints
+// ✅ Users API
 export const getUsers = async () => {
   const response = await api.get("/users/")
   return response.data
@@ -254,13 +250,13 @@ export const getRegistrars = async () => {
   return response.data
 }
 
-// ✅ Dashboard API matching your Django endpoint
+// ✅ Dashboard API
 export const getDashboardData = async () => {
   const response = await api.get("/dashboard/")
   return response.data
 }
 
-// ✅ Reports API matching your Django endpoint
+// ✅ Reports API
 export const getIssueReport = async (params = {}) => {
   const response = await api.get("/issues/report/", { params })
   return response.data
@@ -271,7 +267,7 @@ export const getUnassignedIssues = async () => {
   return response.data
 }
 
-// ✅ Role fields API matching your Django endpoint
+// ✅ Role fields API
 export const getRoleFields = async () => {
   const response = await api.get("/role-fields/")
   return response.data
