@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { getColleges, getCourseUnits } from "./api" // Import from your api.js
+// ✅ Correct import path for api.js in src/services/
+import { getColleges, getCourseUnits } from "../../services/api"
 import axios from "axios"
 
 const LecturerRegistration = () => {
@@ -26,7 +27,6 @@ const LecturerRegistration = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // ✅ Use the configured API functions instead of direct axios calls
     const fetchData = async () => {
       try {
         const [collegesData, unitsData] = await Promise.all([getColleges(), getCourseUnits()])
@@ -70,7 +70,6 @@ const LecturerRegistration = () => {
     setErrors({})
 
     try {
-      // ✅ Use the configured API base URL
       const API_BASE_URL = process.env.REACT_APP_API_URL
       await axios.post(`${API_BASE_URL}/register/`, formData)
       navigate("/login", { state: { message: "Registration successful! Please login." } })
