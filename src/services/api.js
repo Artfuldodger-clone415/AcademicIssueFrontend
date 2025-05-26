@@ -10,8 +10,22 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000, // 30 second timeout for slow Render cold starts
+  timeout: 120000, // ✅ Increased to 2 minutes for cold starts
 })
+
+// ✅ Add retry logic for failed requests
+const retryRequest = async (fn, retries = 2) => {
+  try {
+    return await fn()
+  } catch (error) {
+    if (retries > 0 && (error.code === "ECONNABORTED" || error.message.includes("timeout"))) {
+      console.log(`Request timed out, retrying... (${retries} retries left)`)
+      await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds
+      return retryRequest(fn, retries - 1)
+    }
+    throw error
+  }
+}
 
 // Add request interceptor
 api.interceptors.request.use(
@@ -49,6 +63,7 @@ api.interceptors.response.use(
       url: error.config?.url,
       data: error.response?.data,
       message: error.message,
+      code: error.code,
     })
 
     const originalRequest = error.config
@@ -88,68 +103,78 @@ api.interceptors.response.use(
   },
 )
 
-// ✅ Registration function
+// ✅ Registration function with retry logic
 export const register = async (userData) => {
-  try {
-    console.log("Registering user with data:", { ...userData, password: "[HIDDEN]", password2: "[HIDDEN]" })
-    const response = await api.post("/register/", userData)
-    console.log("Registration successful")
-    return response.data
-  } catch (error) {
-    console.error("Registration failed:", error.response?.data || error.message)
-    throw error
-  }
+  return retryRequest(async () => {
+    try {
+      console.log("Registering user with data:", { ...userData, password: "[HIDDEN]", password2: "[HIDDEN]" })
+      const response = await api.post("/register/", userData)
+      console.log("Registration successful")
+      return response.data
+    } catch (error) {
+      console.error("Registration failed:", error.response?.data || error.message)
+      throw error
+    }
+  })
 }
 
-// ✅ Login function
+// ✅ Login function with retry logic
 export const login = async (credentials) => {
-  try {
-    console.log("Attempting login for user:", credentials.username)
-    const response = await api.post("/token/", credentials)
-    const { access, refresh } = response.data
+  return retryRequest(async () => {
+    try {
+      console.log("Attempting login for user:", credentials.username)
+      const response = await api.post("/token/", credentials)
+      const { access, refresh } = response.data
 
-    localStorage.setItem("access_token", access)
-    localStorage.setItem("refresh_token", refresh)
+      localStorage.setItem("access_token", access)
+      localStorage.setItem("refresh_token", refresh)
 
-    console.log("Login successful")
-    return response.data
-  } catch (error) {
-    console.error("Login failed:", error.response?.data || error.message)
-    throw error
-  }
+      console.log("Login successful")
+      return response.data
+    } catch (error) {
+      console.error("Login failed:", error.response?.data || error.message)
+      throw error
+    }
+  })
 }
 
-// ✅ Get current user profile
+// ✅ Get current user profile with retry logic
 export const getCurrentUser = async () => {
-  try {
-    const response = await api.get("/profile/")
-    return response.data
-  } catch (error) {
-    console.error("Failed to fetch current user:", error.response?.data || error.message)
-    throw error
-  }
+  return retryRequest(async () => {
+    try {
+      const response = await api.get("/profile/")
+      return response.data
+    } catch (error) {
+      console.error("Failed to fetch current user:", error.response?.data || error.message)
+      throw error
+    }
+  })
 }
 
-// ✅ Colleges function
+// ✅ Colleges function with retry logic
 export const getColleges = async () => {
-  try {
-    const response = await api.get("/colleges/")
-    return response.data
-  } catch (error) {
-    console.error("Failed to fetch colleges:", error.response?.data || error.message)
-    throw error
-  }
+  return retryRequest(async () => {
+    try {
+      const response = await api.get("/colleges/")
+      return response.data
+    } catch (error) {
+      console.error("Failed to fetch colleges:", error.response?.data || error.message)
+      throw error
+    }
+  })
 }
 
-// ✅ Course units function
+// ✅ Course units function with retry logic
 export const getCourseUnits = async () => {
-  try {
-    const response = await api.get("/course-units/")
-    return response.data
-  } catch (error) {
-    console.error("Failed to fetch course units:", error.response?.data || error.message)
-    throw error
-  }
+  return retryRequest(async () => {
+    try {
+      const response = await api.get("/course-units/")
+      return response.data
+    } catch (error) {
+      console.error("Failed to fetch course units:", error.response?.data || error.message)
+      throw error
+    }
+  })
 }
 
 // ✅ Update user profile
@@ -163,7 +188,7 @@ export const updateProfile = async (userData) => {
   }
 }
 
-// ✅ Issues API
+// All other functions remain the same...
 export const getIssues = async (filters = {}) => {
   const response = await api.get("/issues/", { params: filters })
   return response.data
@@ -194,7 +219,6 @@ export const assignIssue = async (id, userId) => {
   return response.data
 }
 
-// ✅ Comments API
 export const getComments = async (issueId) => {
   const response = await api.get(`/issues/${issueId}/comments/`)
   return response.data
@@ -208,7 +232,6 @@ export const addComment = async (issueId, content) => {
   return response.data
 }
 
-// ✅ Notifications API
 export const getNotifications = async () => {
   const response = await api.get("/notifications/")
   return response.data
@@ -229,7 +252,6 @@ export const getUnreadNotificationCount = async () => {
   return response.data
 }
 
-// ✅ Users API
 export const getUsers = async () => {
   const response = await api.get("/users/")
   return response.data
@@ -250,13 +272,11 @@ export const getRegistrars = async () => {
   return response.data
 }
 
-// ✅ Dashboard API
 export const getDashboardData = async () => {
   const response = await api.get("/dashboard/")
   return response.data
 }
 
-// ✅ Reports API
 export const getIssueReport = async (params = {}) => {
   const response = await api.get("/issues/report/", { params })
   return response.data
@@ -267,13 +287,11 @@ export const getUnassignedIssues = async () => {
   return response.data
 }
 
-// ✅ Role fields API
 export const getRoleFields = async () => {
   const response = await api.get("/role-fields/")
   return response.data
 }
 
-// Additional utility functions
 export const getIssueStats = async () => {
   const response = await api.get("/issues/stats/")
   return response.data
