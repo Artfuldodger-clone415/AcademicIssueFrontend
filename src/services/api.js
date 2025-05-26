@@ -1,14 +1,19 @@
 import axios from "axios"
-console.log("API URL:", process.env.REACT_APP_API_URL);
 
+// Add better error logging
+console.log("API URL:", process.env.REACT_APP_API_URL)
+
+// Validate environment variable
+if (!process.env.REACT_APP_API_URL) {
+  console.error("REACT_APP_API_URL environment variable is not set!")
+}
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
-});
-
+})
 
 // Add a request interceptor
 api.interceptors.request.use(
@@ -41,7 +46,6 @@ api.interceptors.response.use(
           return Promise.reject(error)
         }
 
-        // ✅ Corrected: Dynamically use the base URL
         const API_BASE_URL = process.env.REACT_APP_API_URL
         const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
           refresh: refreshToken,
@@ -65,6 +69,12 @@ api.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+// ✅ Add a register function to your API
+export const register = async (userData) => {
+  const response = await api.post("/register/", userData)
+  return response.data
+}
 
 // Issues API
 export const getIssues = async (filters = {}) => {
