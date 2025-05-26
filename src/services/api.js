@@ -3,7 +3,7 @@ console.log("API URL:", process.env.REACT_APP_API_URL);
 
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -42,7 +42,7 @@ api.interceptors.response.use(
         }
 
         // ✅ Corrected: Dynamically use the base URL
-        const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api"
+        const API_BASE_URL = process.env.REACT_APP_API_URL
         const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
           refresh: refreshToken,
         })
