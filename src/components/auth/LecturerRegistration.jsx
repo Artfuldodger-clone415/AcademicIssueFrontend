@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-// ✅ Correct import path for api.js in src/services/
-import { getColleges, getCourseUnits } from "../../services/api"
-import axios from "axios"
+import { getColleges, getCourseUnits, register } from "../../services/api"
 
 const LecturerRegistration = () => {
   const navigate = useNavigate()
@@ -34,6 +32,9 @@ const LecturerRegistration = () => {
         setCourseUnits(unitsData)
       } catch (error) {
         console.error("Error fetching data:", error)
+        // Set fallback data if API fails
+        setColleges(["Engineering", "Business", "Arts", "Science", "Medicine"])
+        setCourseUnits(["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science"])
       }
     }
 
@@ -45,6 +46,13 @@ const LecturerRegistration = () => {
       ...formData,
       [e.target.name]: e.target.value,
     })
+    // Clear specific field error when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({
+        ...errors,
+        [e.target.name]: null,
+      })
+    }
   }
 
   const handleCourseUnitChange = (e) => {
@@ -69,15 +77,32 @@ const LecturerRegistration = () => {
     setIsLoading(true)
     setErrors({})
 
+    // Basic validation
+    if (formData.password !== formData.password2) {
+      setErrors({ password2: "Passwords do not match" })
+      setIsLoading(false)
+      return
+    }
+
+    if (selectedCourseUnits.length === 0) {
+      setErrors({ course_units: "Please select at least one course unit" })
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_URL
-      await axios.post(`${API_BASE_URL}/register/`, formData)
-      navigate("/login", { state: { message: "Registration successful! Please login." } })
+      await register(formData)
+      navigate("/login", {
+        state: { message: "Registration successful! Please login with your credentials." },
+      })
     } catch (error) {
-      if (error.response && error.response.data) {
+      console.error("Registration error:", error)
+      if (error.response?.data) {
         setErrors(error.response.data)
+      } else if (error.message.includes("Network Error")) {
+        setErrors({ general: "Network error. Please check your connection and try again." })
       } else {
-        setErrors({ general: "An error occurred during registration." })
+        setErrors({ general: "Registration failed. Please try again later." })
       }
     } finally {
       setIsLoading(false)
@@ -92,6 +117,7 @@ const LecturerRegistration = () => {
         </div>
         <div className="card-body">
           {errors.general && <div className="alert alert-error">{errors.general}</div>}
+
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
