@@ -75,7 +75,7 @@ api.interceptors.response.use(
         const { access } = response.data
         localStorage.setItem("access_token", access)
 
-        api.defaults.headers.common["Authorization"] = `Bearer ${access}`
+        // Update the failed request with new token
         originalRequest.headers.Authorization = `Bearer ${access}`
 
         return api(originalRequest)
@@ -123,6 +123,17 @@ export const login = async (credentials) => {
   }
 }
 
+// ✅ Get current user profile
+export const getCurrentUser = async () => {
+  try {
+    const response = await api.get("/profile/")
+    return response.data
+  } catch (error) {
+    console.error("Failed to fetch current user:", error.response?.data || error.message)
+    throw error
+  }
+}
+
 // ✅ Colleges function matching your Django endpoint
 export const getColleges = async () => {
   try {
@@ -141,6 +152,17 @@ export const getCourseUnits = async () => {
     return response.data
   } catch (error) {
     console.error("Failed to fetch course units:", error.response?.data || error.message)
+    throw error
+  }
+}
+
+// ✅ Update user profile
+export const updateProfile = async (userData) => {
+  try {
+    const response = await api.patch("/profile/", userData)
+    return response.data
+  } catch (error) {
+    console.error("Failed to update profile:", error.response?.data || error.message)
     throw error
   }
 }
@@ -235,17 +257,6 @@ export const getRegistrars = async () => {
 // ✅ Dashboard API matching your Django endpoint
 export const getDashboardData = async () => {
   const response = await api.get("/dashboard/")
-  return response.data
-}
-
-// ✅ Profile API matching your Django endpoint
-export const getCurrentUser = async () => {
-  const response = await api.get("/profile/")
-  return response.data
-}
-
-export const updateProfile = async (userData) => {
-  const response = await api.patch("/profile/", userData)
   return response.data
 }
 
