@@ -1,98 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+"use client"
+
+import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { getColleges, getCourseUnits } from "./api" // Import from your api.js
+import axios from "axios"
 
 const LecturerRegistration = () => {
-  const navigate = useNavigate();
-  const [colleges, setColleges] = useState([]);
-  const [courseUnits, setCourseUnits] = useState([]);
-  const [selectedCourseUnits, setSelectedCourseUnits] = useState([]);
+  const navigate = useNavigate()
+  const [colleges, setColleges] = useState([])
+  const [courseUnits, setCourseUnits] = useState([])
+  const [selectedCourseUnits, setSelectedCourseUnits] = useState([])
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    college: '',
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    college: "",
     course_units: [],
-    password: '',
-    password2: '',
-    role: 'lecturer'
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+    password: "",
+    password2: "",
+    role: "lecturer",
+  })
+  const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Fetch colleges and course units
+    // ✅ Use the configured API functions instead of direct axios calls
     const fetchData = async () => {
       try {
-        const [collegesRes, unitsRes] = await Promise.all([
-          axios.get('/api/colleges/'),
-          axios.get('/api/course-units/')
-        ]);
-        setColleges(collegesRes.data);
-        setCourseUnits(unitsRes.data);
+        const [collegesData, unitsData] = await Promise.all([getColleges(), getCourseUnits()])
+        setColleges(collegesData)
+        setCourseUnits(unitsData)
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error)
       }
-    };
+    }
 
-    fetchData();
-  }, []);
+    fetchData()
+  }, [])
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+      [e.target.name]: e.target.value,
+    })
+  }
 
   const handleCourseUnitChange = (e) => {
-    const value = e.target.value;
-    let updatedCourseUnits;
-    
+    const value = e.target.value
+    let updatedCourseUnits
+
     if (selectedCourseUnits.includes(value)) {
-      updatedCourseUnits = selectedCourseUnits.filter(unit => unit !== value);
+      updatedCourseUnits = selectedCourseUnits.filter((unit) => unit !== value)
     } else {
-      updatedCourseUnits = [...selectedCourseUnits, value];
+      updatedCourseUnits = [...selectedCourseUnits, value]
     }
-    
-    setSelectedCourseUnits(updatedCourseUnits);
+
+    setSelectedCourseUnits(updatedCourseUnits)
     setFormData({
       ...formData,
-      course_units: updatedCourseUnits
-    });
-  };
+      course_units: updatedCourseUnits,
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
+    e.preventDefault()
+    setIsLoading(true)
+    setErrors({})
 
     try {
-      await axios.post('/api/register/', formData);
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      // ✅ Use the configured API base URL
+      const API_BASE_URL = process.env.REACT_APP_API_URL
+      await axios.post(`${API_BASE_URL}/register/`, formData)
+      navigate("/login", { state: { message: "Registration successful! Please login." } })
     } catch (error) {
       if (error.response && error.response.data) {
-        setErrors(error.response.data);
+        setErrors(error.response.data)
       } else {
-        setErrors({ general: 'An error occurred during registration.' });
+        setErrors({ general: "An error occurred during registration." })
       }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="container">
-      <div className="card mt-8 mx-auto" style={{ maxWidth: '600px' }}>
+      <div className="card mt-8 mx-auto" style={{ maxWidth: "600px" }}>
         <div className="card-header">
           <h2 className="text-center">Lecturer Registration</h2>
         </div>
         <div className="card-body">
-          {errors.general && (
-            <div className="alert alert-error">{errors.general}</div>
-          )}
+          {errors.general && <div className="alert alert-error">{errors.general}</div>}
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -136,14 +136,7 @@ const LecturerRegistration = () => {
 
             <div className="mt-4">
               <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+              <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
 
@@ -182,16 +175,12 @@ const LecturerRegistration = () => {
 
             <div className="mt-4">
               <label htmlFor="college">College</label>
-              <select
-                id="college"
-                name="college"
-                value={formData.college}
-                onChange={handleChange}
-                required
-              >
+              <select id="college" name="college" value={formData.college} onChange={handleChange} required>
                 <option value="">Select College</option>
                 {colleges.map((college, index) => (
-                  <option key={index} value={college}>{college}</option>
+                  <option key={index} value={college}>
+                    {college}
+                  </option>
                 ))}
               </select>
               {errors.college && <p className="text-red-600 text-sm">{errors.college}</p>}
@@ -227,7 +216,7 @@ const LecturerRegistration = () => {
 
             <div className="mt-6">
               <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
-                {isLoading ? 'Registering...' : 'Register'}
+                {isLoading ? "Registering..." : "Register"}
               </button>
             </div>
           </form>
@@ -237,7 +226,7 @@ const LecturerRegistration = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LecturerRegistration;
+export default LecturerRegistration
